@@ -76,10 +76,12 @@ type executer interface {
 }
 
 // funcMap are exposted to the templates.
+// NOTE: template-qwiklabs.html renders with lite.go
 var funcMap = map[string]interface{}{
 	"renderLite": Lite,
 	"renderHTML": HTML,
 	"renderMD":   MD,
+	"renderQwiklabsMD": QwiklabsMD,
 	"durationStr": func(d time.Duration) string {
 		m := d / time.Minute
 		return fmt.Sprintf("%02d:00", m)
@@ -158,6 +160,12 @@ var newMDTemplate []byte
 //go:embed template-offline.html
 var newOfflineTemplate []byte
 
+//go:embed template-qwiklabs.html
+var newQwiklabsHTMLTemplate []byte
+
+//go:embed template-qwiklabs.md
+var newQwiklabsMDTemplate []byte
+
 // parseTemplate parses template name defined either in tmpldata
 // or a local file.
 //
@@ -179,6 +187,15 @@ func parseTemplate(name string, fmap map[string]interface{}) (executer, error) {
 		tmpl = &template{
 			bytes: newOfflineTemplate,
 			html:  true,
+		}
+	case "qwiklabs-html":
+		tmpl = &template{
+			bytes: newQwiklabsHTMLTemplate,
+			html:  true,
+		}
+	case "qwiklabs-md":
+		tmpl = &template{
+			bytes: newQwiklabsMDTemplate,
 		}
 	default:
 		// TODO: add templates in-mem caching
