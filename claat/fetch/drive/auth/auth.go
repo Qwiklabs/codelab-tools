@@ -26,7 +26,7 @@ import (
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/jwt"
+	// "golang.org/x/oauth2/jwt" (for Plan B)
 )
 
 const (
@@ -137,6 +137,7 @@ func (h *Helper) produceDriveClient(rt http.RoundTripper) (*http.Client, error) 
 // Plan B
 // Creates a new oauth2.TokenSource from SA
 // Use the same SA as GitWhisperer
+/*
 func (h *Helper) tokenSourceServiceAccount() (oauth2.TokenSource, error) {
   l, err := tokenServiceAccountLocation()
   if err != nil {
@@ -183,7 +184,7 @@ func tokenServiceAccountLocation() (string, error) {
 	}
 	return path.Join(d, qwiklabsServiceAccountCreds), nil
 }
-
+*/
 
 // tokenSource creates a new oauth2.TokenSource backed by tokenRefresher,
 // using previously stored user credentials if available.
