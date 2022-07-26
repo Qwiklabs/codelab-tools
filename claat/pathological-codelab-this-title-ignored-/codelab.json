@@ -1,0 +1,31 @@
+{
+  "environment": "web",
+  "format": "qwiklabs-html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2022-06-27T17:41:02Z",
+  "id": "pathological-codelab-this-title-ignored-",
+  "duration": 340,
+  "title": "Pathological Codelab \u003cThis title ignored\u003e",
+  "summary": "This is a Codelab that uses all the supported authoring features to best test the claat export tool.",
+  "source": "https://docs.google.com/document/d/1Dktwa8b2s0wfm5KH1qZOpty-Sj2wP6Eb-k76IXIGgVI/edit#heading=h.39d63q4adpar",
+  "theme": "cloud",
+  "status": [
+    "draft",
+    "published"
+  ],
+  "category": [
+    "cloud",
+    "testdoc",
+    "foobar"
+  ],
+  "tags": [
+    "qwiklabs",
+    "web"
+  ],
+  "feedback": "https://github.com/CloudVLab/tools/issues",
+  "extra": {
+    "": ""
+  },
+  "url": "pathological-codelab-this-title-ignored-"
+}

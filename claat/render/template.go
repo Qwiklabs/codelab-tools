@@ -76,12 +76,12 @@ type executer interface {
 }
 
 // funcMap are exposted to the templates.
-// NOTE: template-qwiklabs.html renders with lite.go
 var funcMap = map[string]interface{}{
-	"renderLite": Lite,
-	"renderHTML": HTML,
-	"renderMD":   MD,
-	"renderQwiklabsMD": QwiklabsMD,
+	"renderLite":         Lite,
+	"renderHTML":         HTML,
+	"renderMD":           MD,
+	"renderQwiklabsMD":   QwiklabsMD,
+	"renderQwiklabsHTML": QwiklabsHTML,
 	"durationStr": func(d time.Duration) string {
 		m := d / time.Minute
 		return fmt.Sprintf("%02d:00", m)
