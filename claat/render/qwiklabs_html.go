@@ -356,10 +356,7 @@ func (hw *qwiklabsHTMLWriter) infobox(n *nodes.InfoboxNode) {
 	} else {
 		hw.writeString("</ql-infobox>")
 	}
-	// hw.writeString("</div>")
-	// hw.writeFmt("<aside class=%q>", qwiklabs_escape(string(n.Kind)))
-	// hw.write(n.Content.Nodes...)
-	// hw.writeString("</aside>")
+	hw.writeString("</div>")
 }
 
 func (hw *qwiklabsHTMLWriter) survey(n *nodes.SurveyNode) {
