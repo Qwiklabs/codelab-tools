@@ -7,7 +7,7 @@
     {{if .Duration.Minutes}}
     <p><em>Duration is {{.Duration.Minutes}} min</em></p>
     {{end}}
-    {{.Content | renderLite $.Context}}
+    {{.Content | renderQwiklabsHTML $.Context}}
   </div>
   {{end}}{{end}}
 </div>
