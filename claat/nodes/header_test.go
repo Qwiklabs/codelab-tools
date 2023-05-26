@@ -29,13 +29,13 @@ func TestNewHeaderNode(t *testing.T) {
 			name:    "NonEmpty",
 			inLevel: 1,
 			inContent: []Node{
-				NewTextNode("foo"),
-				NewTextNode("bar"),
+				NewTextNode(NewTextNodeOptions{Value: "foo"}),
+				NewTextNode(NewTextNodeOptions{Value: "bar"}),
 			},
 			out: &HeaderNode{
 				node:    node{typ: NodeHeader},
 				Level:   1,
-				Content: NewListNode(NewTextNode("foo"), NewTextNode("bar")),
+				Content: NewListNode(NewTextNode(NewTextNodeOptions{Value: "foo"}), NewTextNode(NewTextNodeOptions{Value: "bar"})),
 			},
 		},
 		{
@@ -101,8 +101,8 @@ func TestHeaderNodeEmpty(t *testing.T) {
 			name:    "NonEmpty",
 			inLevel: 1,
 			inContent: []Node{
-				NewTextNode("foo"),
-				NewTextNode("bar"),
+				NewTextNode(NewTextNodeOptions{Value: "foo"}),
+				NewTextNode(NewTextNodeOptions{Value: "bar"}),
 			},
 		},
 	}
@@ -112,6 +112,40 @@ func TestHeaderNodeEmpty(t *testing.T) {
 			out := n.Empty()
 			if out != tc.out {
 				t.Errorf("HeaderNode.Empty() = %t, want %t", out, tc.out)
+				return
+			}
+		})
+	}
+}
+
+func TestHeaderMutateType(t *testing.T) {
+	tests := []struct {
+		name   string
+		inType NodeType
+		out    NodeType
+	}{
+		{
+			name:   "Header",
+			inType: NodeHeader,
+			out:    NodeHeader,
+		},
+		{
+			name:   "AlternateHeaderType",
+			inType: NodeHeaderFAQ,
+			out:    NodeHeaderFAQ,
+		},
+		{
+			name:   "NotAHeader",
+			inType: NodeButton,
+			out:    NodeHeader,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			n := NewHeaderNode(1) // 1 chosen arbitrarily.
+			n.MutateType(tc.inType)
+			if n.typ != tc.out {
+				t.Errorf("HeaderNode.typ after MutateType = %v, want %v", n.typ, tc.out)
 				return
 			}
 		})

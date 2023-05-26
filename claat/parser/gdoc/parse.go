@@ -16,6 +16,7 @@ package gdoc
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/url"
@@ -32,6 +33,7 @@ import (
 	"github.com/googlecodelabs/tools/claat/parser"
 	"github.com/googlecodelabs/tools/claat/types"
 	"github.com/googlecodelabs/tools/claat/util"
+        "github.com/stoewer/go-strcase"
 )
 
 func init() {
@@ -77,6 +79,9 @@ const (
 
 	// google docs comments are links with commentPrefix.
 	commentPrefix = "#cmnt"
+
+	// the google.com redirector service
+	redirectorPrefix = "https://www.google.com/url?q="
 )
 
 var (
@@ -396,14 +401,12 @@ func metaTable(ds *docState) {
 			continue
 		}
 		s := stringifyNode(tr.FirstChild.NextSibling, true, false)
-		fieldName := strings.ToLower(stringifyNode(tr.FirstChild, true, false))
+		fieldName := strcase.SnakeCase(stringifyNode(tr.FirstChild, true, false))
 		switch fieldName {
 		case "id", "url":
 			ds.clab.ID = s
 		case "author", "authors":
 			ds.clab.Authors = s
-		case "badge path":
-			ds.clab.BadgePath = s
 		case "summary":
 			ds.clab.Summary = stringifyNode(tr.FirstChild.NextSibling, true, true)
 		case "category", "categories":
@@ -415,9 +418,9 @@ func metaTable(ds *docState) {
 			v := util.NormalizedSplit(s)
 			sv := types.LegacyStatus(v)
 			ds.clab.Status = &sv
-		case "feedback", "feedback link":
+		case "feedback", "feedback_link":
 			ds.clab.Feedback = s
-		case "analytics", "analytics account", "google analytics":
+		case "analytics", "analytics_account", "google_analytics":
 			ds.clab.GA = s
 		default:
 			// If not explicitly parsed, it might be a pass_metadata value.
@@ -693,7 +696,7 @@ func image(ds *docState) nodes.Node {
 		// For iframe, make sure URL ends in allowlisted domain.
 		ok := false
 		for _, domain := range nodes.IframeAllowlist {
-			if strings.HasSuffix(u.Hostname(), domain) {
+			if u.Hostname() == domain {
 				ok = true
 				break
 			}
@@ -704,12 +707,34 @@ func image(ds *docState) nodes.Node {
 		errorAlt = "The domain of the requested iframe (" + u.Hostname() + ") has not been whitelisted."
 		fmt.Fprint(os.Stderr, errorAlt+"\n")
 	}
+
+	var imageBytes []byte
+	var imageSrc string
 	s := nodeAttr(ds.cur, "src")
 	if s == "" {
 		return nil
+	} else if strings.HasPrefix(s, "data:") {
+		_, data, ok := strings.Cut(s, ",")
+		if !ok {
+			fmt.Fprint(os.Stderr, "Failed to decode data URL: "+s+" \n")
+			return nil
+		}
+		b, err := base64.StdEncoding.DecodeString(data)
+		if err != nil {
+			fmt.Fprint(os.Stderr, "Failed to decode data URL: "+s+"\n"+err.Error()+"\n")
+			return nil
+		}
+		imageSrc = ""
+		imageBytes = b
+	} else {
+		imageSrc = s
+		imageBytes = []byte{}
 	}
-	n := nodes.NewImageNode(s)
-	n.Width = styleFloatValue(ds.cur, "width")
+	n := nodes.NewImageNode(nodes.NewImageNodeOptions{
+		Src:   imageSrc,
+		Bytes: imageBytes,
+		Width: styleFloatValue(ds.cur, "width"),
+	})
 	n.MutateBlock(findBlockParent(ds.cur))
 	if errorAlt != "" {
 		n.Alt = errorAlt
@@ -793,7 +818,18 @@ func link(ds *docState) nodes.Node {
 		return nil
 	}
 
-	t := nodes.NewTextNode(text)
+	// re-write google.com redirector URLs
+	if strings.HasPrefix(href, redirectorPrefix) {
+		href = strings.TrimPrefix(href, redirectorPrefix)
+		h, err := url.QueryUnescape(href)
+		if err == nil {
+			href = h
+		}
+	}
+
+	t := nodes.NewTextNode(nodes.NewTextNodeOptions{
+		Value: text,
+	})
 	if ds.flags&fMakeBold != 0 || isBold(ds.css, ds.cur.Parent) {
 		t.Bold = true
 	}
@@ -846,7 +882,7 @@ func text(ds *docState) nodes.Node {
 	}
 
 	v := stringifyNode(ds.cur, false, true)
-	n := nodes.NewTextNode(v)
+	n := nodes.NewTextNode(nodes.NewTextNodeOptions{Value: v})
 	// Only apply styling if the node contains non-whitespace.
 	if len(strings.TrimSpace(v)) > 0 {
 		n.Bold = bold

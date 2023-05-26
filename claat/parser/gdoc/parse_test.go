@@ -16,6 +16,7 @@ package gdoc
 
 import (
 	"bytes"
+	"encoding/base64"
 	"io"
 	"reflect"
 	"strings"
@@ -214,7 +215,7 @@ func TestMetaTablePassMetadata(t *testing.T) {
 				<td>Final</td>
 			</tr>
 			<tr>
-				<td>Feedback</td>
+				<td>Feedback Link</td>
 				<td>https://example.com/issues</td>
 			</tr>
 			<tr>
@@ -237,7 +238,7 @@ func TestMetaTablePassMetadata(t *testing.T) {
 	p := &Parser{}
 	opts := *parser.NewOptions()
 	opts.PassMetadata = map[string]bool{
-		"extrafieldone": true,
+		"extra_field_one": true,
 	}
 
 	clab, err := p.Parse(markupReader(markup), opts)
@@ -256,7 +257,7 @@ func TestMetaTablePassMetadata(t *testing.T) {
 		// TODO: move sorting to Parse of the parser package
 		Tags: []string{"kiosk", "web"},
 		Extra: map[string]string{
-			"extrafieldone": "11111",
+			"extra_field_one": "11111",
 		},
 	}
 	if !reflect.DeepEqual(clab.Meta, meta) {
@@ -295,6 +296,9 @@ func TestParseDoc(t *testing.T) {
 		<p><span>[[</span><span class="bold">import</span><span>&nbsp;</span><span><a href="https://example.com/import">shared</a></span><span>]]</span></p>
 
 		<img src="https://host/image.png" alt="alt text" title="title text">
+		<p><img alt="JPEG" src="data:image/jpeg;base64,/9j/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAAA//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AN//Z"></p>
+		<p><img alt="GIF" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"></p>
+		<p><img alt="PNG" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII="></p>
 		<p><img src="https://host/small.png" style="height: 10px; width: 25.5px"> icon.</p>
 
 		<p><img alt="https://www.youtube.com/watch?v=vid" src="https://yt.com/vid.jpg"></p>
@@ -396,16 +400,47 @@ func TestParseDoc(t *testing.T) {
 
 	content := nodes.NewListNode()
 
-	img := nodes.NewImageNode("https://host/image.png")
-	img.Alt = "alt text"
-	img.Title = "title text"
+	img := nodes.NewImageNode(nodes.NewImageNodeOptions{
+		Src:   "https://host/image.png",
+		Alt:   "alt text",
+		Title: "title text",
+	})
 	para := nodes.NewListNode(img)
 	para.MutateBlock(true)
 	content.Append(para)
 
-	img = nodes.NewImageNode("https://host/small.png")
-	img.Width = 25.5
-	para = nodes.NewListNode(img, nodes.NewTextNode(" icon."))
+	bytes, _ := base64.StdEncoding.DecodeString("/9j/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAAA//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AN//Z")
+	img = nodes.NewImageNode(nodes.NewImageNodeOptions{
+		Bytes: bytes,
+		Alt:   "JPEG",
+	})
+	para = nodes.NewListNode(img)
+	para.MutateBlock(true)
+	content.Append(para)
+
+	bytes, _ = base64.StdEncoding.DecodeString("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
+	img = nodes.NewImageNode(nodes.NewImageNodeOptions{
+		Bytes: bytes,
+		Alt:   "GIF",
+	})
+	para = nodes.NewListNode(img)
+	para.MutateBlock(true)
+	content.Append(para)
+
+	bytes, _ = base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=")
+	img = nodes.NewImageNode(nodes.NewImageNodeOptions{
+		Bytes: bytes,
+		Alt:   "PNG",
+	})
+	para = nodes.NewListNode(img)
+	para.MutateBlock(true)
+	content.Append(para)
+
+	img = nodes.NewImageNode(nodes.NewImageNodeOptions{
+		Src:   "https://host/small.png",
+		Width: 25.5,
+	})
+	para = nodes.NewListNode(img, nodes.NewTextNode(nodes.NewTextNodeOptions{Value: " icon."}))
 	para.MutateBlock(true)
 	content.Append(para)
 
@@ -417,62 +452,64 @@ func TestParseDoc(t *testing.T) {
 	iframe.MutateBlock(true)
 	content.Append(iframe)
 
-	img = nodes.NewImageNode("https://host/image.png")
-	img.Alt = "The domain of the requested iframe (example.com) has not been whitelisted."
+	img = nodes.NewImageNode(nodes.NewImageNodeOptions{
+		Src: "https://host/image.png",
+		Alt: "The domain of the requested iframe (example.com) has not been whitelisted.",
+	})
 	para = nodes.NewListNode(img)
 	para.MutateBlock(true)
 	content.Append(para)
 
-	h := nodes.NewHeaderNode(3, nodes.NewTextNode("What you'll learn"))
+	h := nodes.NewHeaderNode(3, nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "What you'll learn"}))
 	h.MutateType(nodes.NodeHeaderCheck)
 	content.Append(h)
 	list := nodes.NewItemsListNode("", 0)
 	list.MutateType(nodes.NodeItemsCheck)
-	list.NewItem().Append(nodes.NewTextNode("First One"))
+	list.NewItem().Append(nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "First One"}))
 	item := list.NewItem()
-	item.Append(nodes.NewTextNode("Two "))
-	item.Append(nodes.NewURLNode("http://example.com", nodes.NewTextNode("Link")))
-	list.NewItem().Append(nodes.NewTextNode("Three"))
+	item.Append(nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "Two "}))
+	item.Append(nodes.NewURLNode("http://example.com", nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "Link"})))
+	list.NewItem().Append(nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "Three"}))
 	content.Append(list)
 
 	para = nodes.NewListNode()
 	para.MutateBlock(true)
-	para.Append(nodes.NewTextNode("This is "))
-	txt := nodes.NewTextNode("code")
+	para.Append(nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "This is "}))
+	txt := nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "code"})
 	txt.Code = true
 	para.Append(txt)
-	para.Append(nodes.NewTextNode("."))
+	para.Append(nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "."}))
 	content.Append(para)
 
 	para = nodes.NewListNode()
 	para.MutateBlock(true)
-	para.Append(nodes.NewTextNode("Just a paragraph."))
+	para.Append(nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "Just a paragraph."}))
 	content.Append(para)
 
-	u := nodes.NewURLNode("url", nodes.NewTextNode("one url"))
+	u := nodes.NewURLNode("url", nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "one url"}))
 	para = nodes.NewListNode(u)
 	para.MutateBlock(true)
 	content.Append(para)
 
-	btn := nodes.NewButtonNode(true, true, true, nodes.NewTextNode("Download Zip"))
+	btn := nodes.NewButtonNode(true, true, true, nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "Download Zip"}))
 	dl := nodes.NewURLNode("http://example.com", btn)
 	para = nodes.NewListNode(dl)
 	para.MutateBlock(true)
 	content.Append(para)
 
-	b := nodes.NewTextNode("Bo ld")
+	b := nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "Bo ld"})
 	b.Bold = true
-	i := nodes.NewTextNode(" italic")
+	i := nodes.NewTextNode(nodes.NewTextNodeOptions{Value: " italic"})
 	i.Italic = true
-	bi := nodes.NewTextNode("or both.")
+	bi := nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "or both."})
 	bi.Bold = true
 	bi.Italic = true
-	para = nodes.NewListNode(b, i, nodes.NewTextNode(" text "), bi)
+	para = nodes.NewListNode(b, i, nodes.NewTextNode(nodes.NewTextNodeOptions{Value: " text "}), bi)
 	para.MutateBlock(true)
 	content.Append(para)
 
 	h = nodes.NewHeaderNode(3, nodes.NewURLNode(
-		"http://host/file.java", nodes.NewTextNode("a file")))
+		"http://host/file.java", nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "a file"})))
 	content.Append(h)
 
 	var lang string
@@ -486,11 +523,11 @@ func TestParseDoc(t *testing.T) {
 	tn.MutateBlock(2)
 	content.Append(tn)
 
-	b = nodes.NewTextNode("warning")
+	b = nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "warning"})
 	b.Bold = true
 	n1 := nodes.NewListNode(b)
 	n1.MutateBlock(true)
-	n2 := nodes.NewListNode(nodes.NewTextNode("negative box."))
+	n2 := nodes.NewListNode(nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "negative box."}))
 	n2.MutateBlock(true)
 	box := nodes.NewInfoboxNode(nodes.InfoboxNegative, n1, n2)
 	content.Append(box)
@@ -530,7 +567,8 @@ func TestParseFragment(t *testing.T) {
 	<body>
 		<p class="title"><a name="a1"></a><span>Test Codelab</span></p>
 		<p>this should not be ignored</p>
-		<img src="https://host/image.png">
+		<p><img src="https://host/image.png"></p>
+		<span class="c17 c7"><a class="c11" href="https://www.google.com/url?q=https://www.example.com/%2B/test;l%3D68&amp;sa=D">Test redirector.</a></span>
 		<div class="comment">
 		<p><a href="#cmnt_ref1" name="cmnt1">[a]</a><span class="c16 c8">Test comment.</span></p>
 		</div>
@@ -549,16 +587,24 @@ func TestParseFragment(t *testing.T) {
 
 	para := nodes.NewListNode()
 	para.MutateBlock(true)
-	para.Append(nodes.NewTextNode("Test Codelab"))
+	para.Append(nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "Test Codelab"}))
 	want = append(want, para)
 
 	para = nodes.NewListNode()
 	para.MutateBlock(true)
-	para.Append(nodes.NewTextNode("this should not be ignored"))
+	para.Append(nodes.NewTextNode(nodes.NewTextNodeOptions{Value: "this should not be ignored"}))
 	want = append(want, para)
 
-	img := nodes.NewImageNode("https://host/image.png")
+	img := nodes.NewImageNode(nodes.NewImageNodeOptions{Src: "https://host/image.png"})
 	para = nodes.NewListNode(img)
+	para.MutateBlock(true)
+	want = append(want, para)
+
+	tn := nodes.NewTextNode(nodes.NewTextNodeOptions{
+		Value: "Test redirector.",
+	})
+	rlink := nodes.NewURLNode("https://www.example.com/+/test;l=68&sa=D", tn)
+	para = nodes.NewListNode(rlink)
 	para.MutateBlock(true)
 	want = append(want, para)
 
