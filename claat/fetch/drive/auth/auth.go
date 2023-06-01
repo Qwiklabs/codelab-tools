@@ -34,8 +34,13 @@ const (
 	scopeDriveReadOnly = "https://www.googleapis.com/auth/drive.readonly"
 
 	// program credentials for installed apps
-	googClient = "183908478743-e8rth9fbo7juk9eeivgp23asnt791g63.apps.googleusercontent.com"
-	googSecret = "ljELuf5jUrzcOxZGL7OQfkIC"
+	// Qwiklabs Gravitron
+	// googClient = "183908478743-e8rth9fbo7juk9eeivgp23asnt791g63.apps.googleusercontent.com"
+	// googSecret = "ljELuf5jUrzcOxZGL7OQfkIC"
+
+	// Qwiklabs internal test ground
+	googClient = "421189868383-r5utd7ulbtv4i5n0fbifnp2diej30g47.apps.googleusercontent.com"
+	googSecret = "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"
 
 	// token providers
 	ProviderGoogle = "goog"
@@ -49,7 +54,8 @@ var (
 		ClientID:     googClient,
 		ClientSecret: googSecret,
 		Scopes:       []string{scopeDriveReadOnly},
-		RedirectURL:  "urn:ietf:wg:oauth:2.0:oob",
+		// RedirectURL:  "urn:ietf:wg:oauth:2.0:oob",   OOB auth deprecated
+		RedirectURL:  "http://localhost:8091",
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://accounts.google.com/o/oauth2/auth",
 			TokenURL: "https://accounts.google.com/o/oauth2/token",
